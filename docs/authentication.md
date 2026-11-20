@@ -76,10 +76,16 @@ Connect a remote MCP client that supports Streamable HTTP and OAuth dynamic clie
 `<BETTER_AUTH_URL>/api/mcp`. Sign in to OpenRift when prompted and review the requested access.
 For local development, use the same localhost origin and scheme as the web app.
 
-The `openrift:read` scope exposes card search and read access to your collections, copies and decks.
-The API uses the same access checks as the web app. Clients may request `offline_access` to refresh
-their access. Migration `385-mcp-oauth` creates the signing-key and OAuth storage. MCP requires
-HTTPS, with HTTP allowed on loopback for local development.
+The `openrift:read` scope grants card search and read access to your collections, copies and decks.
+With `openrift:write`, a client can create collections, add or move copies, create or edit decks,
+and replace a deck's card list using its current version. When a client requests both scopes,
+the consent screen lets you approve read access only. The API uses the same access checks as the
+web app. Clients may request `offline_access` to refresh their access.
+
+Profile → Integrations lists the OAuth clients you have approved and the access you granted.
+Clients registered with read-only scopes need to register for write access before requesting it.
+Migration `385-mcp-oauth` creates the signing-key and OAuth storage. MCP requires HTTPS, with HTTP
+allowed on loopback for local development.
 
 ## Session Management
 

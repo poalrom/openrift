@@ -1,5 +1,10 @@
 import { apiKey } from "@better-auth/api-key";
 import { mcp } from "@better-auth/mcp";
+import {
+  MCP_READ_SCOPE,
+  MCP_WRITE_SCOPE,
+  OAUTH_OFFLINE_SCOPE,
+} from "@openrift/shared/contracts/oauth-connections";
 import { sanitizeDisplayName, validateDisplayName } from "@openrift/shared/display-name";
 import { HOUR_MS } from "@openrift/shared/format-date";
 import { validateProfileBio } from "@openrift/shared/profile-bio";
@@ -19,7 +24,7 @@ import type { createEmailSender } from "./email.js";
 import { emailMessages } from "./emails/messages.js";
 import { displayLocaleFromRequest } from "./lib/display-locale.js";
 import { collectionsRepo } from "./modules/collections/repositories/collections.js";
-import { MCP_SCOPE, mcpResourceUrl } from "./modules/mcp/config.js";
+import { mcpResourceUrl } from "./modules/mcp/config.js";
 import { jwtSchema, oauthSchema } from "./modules/mcp/oauth-schema.js";
 import { dropLiveSpotsOfUser } from "./modules/tournaments/services/participant-drops.js";
 import { userPreferencesRepo } from "./modules/users/repositories/user-preferences.js";
@@ -35,7 +40,7 @@ function openRiftMcpPlugins(resource: string | undefined): BetterAuthPlugin[] {
       schema: oauthSchema,
       loginPage: "/login",
       consentPage: "/mcp/consent",
-      scopes: [MCP_SCOPE, "offline_access"],
+      scopes: [MCP_READ_SCOPE, MCP_WRITE_SCOPE, OAUTH_OFFLINE_SCOPE],
       grantTypes: ["authorization_code", "refresh_token"],
       allowDynamicClientRegistration: true,
       allowUnauthenticatedClientRegistration: true,

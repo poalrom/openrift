@@ -91,6 +91,7 @@ export * from "./lists.js";
 export * from "./loans.js";
 export * from "./meta.js";
 export * from "./meta-submissions.js";
+export { oauthConnectionsContract } from "./oauth-connections.js";
 export * from "./organizations.js";
 export * from "./overlay.js";
 export * from "./preferences.js";

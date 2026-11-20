@@ -1,5 +1,4 @@
 export const MCP_PATH = "/api/mcp";
-export const MCP_SCOPE = "openrift:read";
 export const MCP_DISCOVERY_PATHS = [
   "/.well-known/oauth-protected-resource",
   `/.well-known/oauth-protected-resource${MCP_PATH}`,

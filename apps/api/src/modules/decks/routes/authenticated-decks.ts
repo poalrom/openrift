@@ -366,15 +366,15 @@ export const decksRouter = {
     const { decks } = context.repos;
     const userId = context.userId;
 
-    const [deck, cardRows] = await Promise.all([
-      decks.getByIdForUser(input.id, userId),
-      decks.cardsForDeck(input.id, userId),
-    ]);
+    // Read the version first so a concurrent change can never make older cards look current.
+    const deck = await decks.getByIdForUser(input.id, userId);
     assertFound(deck, "Not found");
+    const cardRows = await decks.cardsForDeck(input.id, userId);
 
     return {
       deck: toDeck(deck),
       cards: cardRows.map((r) => toDeckCard(r)),
+      version: deck.updatedXid,
     };
   }),
 

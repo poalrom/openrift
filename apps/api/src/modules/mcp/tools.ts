@@ -11,10 +11,14 @@ import { decksRouter } from "../decks/routes/authenticated-decks.js";
 
 const readOnly = { readOnlyHint: true, destructiveHint: false, openWorldHint: false };
 
-async function toolResult(context: ApiContext, read: () => Promise<unknown>) {
+export async function toolResult(context: ApiContext, run: () => Promise<unknown>) {
   try {
-    const value = await read();
-    return { content: [{ type: "text" as const, text: JSON.stringify(value) }] };
+    const value = await run();
+    return {
+      content: [
+        { type: "text" as const, text: JSON.stringify(value === undefined ? { ok: true } : value) },
+      ],
+    };
   } catch (error) {
     if (error instanceof ORPCError && error.status < 500) {
       return {
@@ -35,7 +39,7 @@ async function toolResult(context: ApiContext, read: () => Promise<unknown>) {
   }
 }
 
-export function registerMcpTools(server: McpServer, context: ApiContext): void {
+export function registerMcpReadTools(server: McpServer, context: ApiContext): void {
   const options = { context };
   server.registerTool(
     "search_cards",
@@ -83,7 +87,8 @@ export function registerMcpTools(server: McpServer, context: ApiContext): void {
   server.registerTool(
     "get_deck",
     {
-      description: "Read one of the signed-in account's decks and its full card list.",
+      description:
+        "Read a deck owned by the signed-in account, including its card list and version.",
       inputSchema: idParamSchema,
       annotations: readOnly,
     },

@@ -249,6 +249,7 @@ export const deckCardsListResponseSchema = z.object({
 export const deckDetailResponseSchema = z.object({
   deck: deckResponseSchema,
   cards: z.array(deckCardResponseSchema),
+  version: z.string().optional(),
 });
 
 export const deckPlanDetailResponseSchema = z.object({ plan: deckPlanResponseSchema });

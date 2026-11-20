@@ -5,6 +5,7 @@ import { adminGrantsRepo } from "./repositories/admin-grants.js";
 import { adminsRepo } from "./repositories/admins.js";
 import { apiKeysRepo } from "./repositories/api-keys.js";
 import { featureFlagsRepo } from "./repositories/feature-flags.js";
+import { oauthConnectionsRepo } from "./repositories/oauth-connections.js";
 import { referralsRepo } from "./repositories/referrals.js";
 import { userContactMethodsRepo } from "./repositories/user-contact-methods.js";
 import { userFeatureFlagsRepo } from "./repositories/user-feature-flags.js";
@@ -17,6 +18,7 @@ export interface UsersRepos {
   adminGrants: ReturnType<typeof adminGrantsRepo>;
   apiKeys: ReturnType<typeof apiKeysRepo>;
   featureFlags: ReturnType<typeof featureFlagsRepo>;
+  oauthConnections: ReturnType<typeof oauthConnectionsRepo>;
   referrals: ReturnType<typeof referralsRepo>;
   userContactMethods: ReturnType<typeof userContactMethodsRepo>;
   userFeatureFlags: ReturnType<typeof userFeatureFlagsRepo>;
@@ -31,6 +33,7 @@ export function createUsersRepos(db: Kysely<Database>): UsersRepos {
     adminGrants: adminGrantsRepo(db),
     apiKeys: apiKeysRepo(db),
     featureFlags: featureFlagsRepo(db),
+    oauthConnections: oauthConnectionsRepo(db),
     referrals: referralsRepo(db),
     userContactMethods: userContactMethodsRepo(db),
     userFeatureFlags: userFeatureFlagsRepo(db),
