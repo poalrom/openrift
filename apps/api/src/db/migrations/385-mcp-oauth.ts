@@ -136,39 +136,6 @@ export async function up(db: Kysely<unknown>): Promise<void> {
         expires_at timestamptz NOT NULL
       );
 
-      -- Better Auth's Kysely adapter pre-serializes arrays for PostgreSQL.
-      -- postgres.js serializes them again when binding to a JSONB column.
-      CREATE FUNCTION decode_oauth_json_arrays() RETURNS trigger LANGUAGE plpgsql AS $decode$
-      DECLARE
-        row_data jsonb := to_jsonb(NEW);
-        column_name text;
-      BEGIN
-        FOREACH column_name IN ARRAY TG_ARGV LOOP
-          IF jsonb_typeof(row_data -> column_name) = 'string' THEN
-            row_data := jsonb_set(row_data, ARRAY[column_name], (row_data ->> column_name)::jsonb);
-          END IF;
-        END LOOP;
-        RETURN jsonb_populate_record(NEW, row_data);
-      END;
-      $decode$;
-
-      CREATE TRIGGER trg_oauth_clients_decode_arrays BEFORE INSERT OR UPDATE ON oauth_clients
-        FOR EACH ROW EXECUTE FUNCTION decode_oauth_json_arrays(
-          'scopes', 'client_credentials_scopes', 'contacts', 'redirect_uris',
-          'post_logout_redirect_uris', 'grant_types', 'response_types'
-        );
-      CREATE TRIGGER trg_oauth_resources_decode_arrays BEFORE INSERT OR UPDATE ON oauth_resources
-        FOR EACH ROW EXECUTE FUNCTION decode_oauth_json_arrays('allowed_scopes');
-      CREATE TRIGGER trg_oauth_refresh_tokens_decode_arrays
-        BEFORE INSERT OR UPDATE ON oauth_refresh_tokens FOR EACH ROW
-        EXECUTE FUNCTION decode_oauth_json_arrays('resources', 'requested_user_info_claims', 'scopes');
-      CREATE TRIGGER trg_oauth_access_tokens_decode_arrays
-        BEFORE INSERT OR UPDATE ON oauth_access_tokens FOR EACH ROW
-        EXECUTE FUNCTION decode_oauth_json_arrays('resources', 'requested_user_info_claims', 'scopes');
-      CREATE TRIGGER trg_oauth_consents_decode_arrays BEFORE INSERT OR UPDATE ON oauth_consents
-        FOR EACH ROW
-        EXECUTE FUNCTION decode_oauth_json_arrays('resources', 'requested_user_info_claims', 'scopes');
-
       CREATE INDEX idx_oauth_client_user_id ON oauth_clients (user_id);
       CREATE INDEX idx_oauth_client_resource_resource_id ON oauth_client_resources (resource_id);
       CREATE INDEX idx_oauth_refresh_token_client_id ON oauth_refresh_tokens (client_id);
@@ -192,5 +159,4 @@ export async function down(db: Kysely<unknown>): Promise<void> {
       oauth_client_assertions, oauth_consents, oauth_access_tokens, oauth_refresh_tokens,
       oauth_client_resources, oauth_resources, oauth_clients, jwks
   `.execute(db);
-  await sql`DROP FUNCTION decode_oauth_json_arrays()`.execute(db);
 }

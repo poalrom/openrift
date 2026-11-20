@@ -263,27 +263,6 @@ CREATE FUNCTION public.check_printing_pair_language() RETURNS trigger
 
 
 --
--- Name: decode_oauth_json_arrays(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.decode_oauth_json_arrays() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-      DECLARE
-        row_data jsonb := to_jsonb(NEW);
-        column_name text;
-      BEGIN
-        FOREACH column_name IN ARRAY TG_ARGV LOOP
-          IF jsonb_typeof(row_data -> column_name) = 'string' THEN
-            row_data := jsonb_set(row_data, ARRAY[column_name], (row_data ->> column_name)::jsonb);
-          END IF;
-        END LOOP;
-        RETURN jsonb_populate_record(NEW, row_data);
-      END;
-      $$;
-
-
---
 -- Name: face_images_require_rehosted(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -9132,41 +9111,6 @@ CREATE TRIGGER trg_markers_slug_change AFTER UPDATE OF slug ON public.markers FO
 --
 
 CREATE TRIGGER trg_marketplace_products_set_norm_name BEFORE INSERT OR UPDATE OF product_name ON public.marketplace_products FOR EACH ROW EXECUTE FUNCTION public.marketplace_products_set_norm_name();
-
-
---
--- Name: oauth_access_tokens trg_oauth_access_tokens_decode_arrays; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trg_oauth_access_tokens_decode_arrays BEFORE INSERT OR UPDATE ON public.oauth_access_tokens FOR EACH ROW EXECUTE FUNCTION public.decode_oauth_json_arrays('resources', 'requested_user_info_claims', 'scopes');
-
-
---
--- Name: oauth_clients trg_oauth_clients_decode_arrays; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trg_oauth_clients_decode_arrays BEFORE INSERT OR UPDATE ON public.oauth_clients FOR EACH ROW EXECUTE FUNCTION public.decode_oauth_json_arrays('scopes', 'client_credentials_scopes', 'contacts', 'redirect_uris', 'post_logout_redirect_uris', 'grant_types', 'response_types');
-
-
---
--- Name: oauth_consents trg_oauth_consents_decode_arrays; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trg_oauth_consents_decode_arrays BEFORE INSERT OR UPDATE ON public.oauth_consents FOR EACH ROW EXECUTE FUNCTION public.decode_oauth_json_arrays('resources', 'requested_user_info_claims', 'scopes');
-
-
---
--- Name: oauth_refresh_tokens trg_oauth_refresh_tokens_decode_arrays; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trg_oauth_refresh_tokens_decode_arrays BEFORE INSERT OR UPDATE ON public.oauth_refresh_tokens FOR EACH ROW EXECUTE FUNCTION public.decode_oauth_json_arrays('resources', 'requested_user_info_claims', 'scopes');
-
-
---
--- Name: oauth_resources trg_oauth_resources_decode_arrays; Type: TRIGGER; Schema: public; Owner: -
---
-
-CREATE TRIGGER trg_oauth_resources_decode_arrays BEFORE INSERT OR UPDATE ON public.oauth_resources FOR EACH ROW EXECUTE FUNCTION public.decode_oauth_json_arrays('allowed_scopes');
 
 
 --

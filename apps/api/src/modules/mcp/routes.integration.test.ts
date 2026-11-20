@@ -421,5 +421,29 @@ describe.skipIf(!databaseUrl)("OpenRift MCP OAuth", () => {
       headers: { Cookie: otherCookie },
     });
     expect(await otherProfile.json()).toEqual({ items: [] });
+
+    const consents = await app.request(`${origin}/api/auth/oauth2/get-consents`, {
+      headers: { Cookie: cookie },
+    });
+    const granted = z
+      .array(z.object({ id: z.string(), clientId: z.string() }))
+      .parse(await consents.json())
+      .find((consent) => consent.clientId === clientId);
+    const reduced = await post(
+      "/api/auth/oauth2/update-consent",
+      {
+        id: granted?.id,
+        update: { scopes: [MCP_READ_SCOPE] },
+      },
+      { Cookie: cookie },
+    );
+    expect(reduced.status).toBe(200);
+    expect(await reduced.json()).toMatchObject({ scopes: [MCP_READ_SCOPE] });
+    const narrowedTools = await mcpResult(await mcpRequest("tools/list", {}, accessToken));
+    expect(narrowedTools).not.toMatchObject({
+      result: {
+        tools: expect.arrayContaining([expect.objectContaining({ name: "create_collection" })]),
+      },
+    });
   });
 });

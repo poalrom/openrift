@@ -25,27 +25,22 @@ import { emailMessages } from "./emails/messages.js";
 import { displayLocaleFromRequest } from "./lib/display-locale.js";
 import { collectionsRepo } from "./modules/collections/repositories/collections.js";
 import { mcpResourceUrl } from "./modules/mcp/config.js";
+import { oauthJsonArrays } from "./modules/mcp/oauth-json-arrays.js";
 import { jwtSchema, oauthSchema } from "./modules/mcp/oauth-schema.js";
 import { dropLiveSpotsOfUser } from "./modules/tournaments/services/participant-drops.js";
 import { userPreferencesRepo } from "./modules/users/repositories/user-preferences.js";
 
-function openRiftMcpPlugins(resource: string | undefined): BetterAuthPlugin[] {
-  if (!resource) {
-    return [];
-  }
-  return [
-    jwt({ disableSettingJwtHeader: true, schema: jwtSchema }),
-    mcp({
-      resource,
-      schema: oauthSchema,
-      loginPage: "/login",
-      consentPage: "/mcp/consent",
-      scopes: [MCP_READ_SCOPE, MCP_WRITE_SCOPE, OAUTH_OFFLINE_SCOPE],
-      grantTypes: ["authorization_code", "refresh_token"],
-      allowDynamicClientRegistration: true,
-      allowUnauthenticatedClientRegistration: true,
-    }),
-  ];
+function openRiftMcpPlugin(resource: string): BetterAuthPlugin {
+  return mcp({
+    resource,
+    schema: oauthSchema,
+    loginPage: "/login",
+    consentPage: "/mcp/consent",
+    scopes: [MCP_READ_SCOPE, MCP_WRITE_SCOPE, OAUTH_OFFLINE_SCOPE],
+    grantTypes: ["authorization_code", "refresh_token"],
+    allowDynamicClientRegistration: true,
+    allowUnauthenticatedClientRegistration: true,
+  });
 }
 
 export function createAuth(deps: {
@@ -56,9 +51,12 @@ export function createAuth(deps: {
 }) {
   const { config, db, dialect, sendEmail } = deps;
   const mcpResource = mcpResourceUrl(config.siteOrigin);
+  const oauth = mcpResource ? openRiftMcpPlugin(mcpResource) : undefined;
 
   const auth = betterAuth({
-    database: { dialect, type: "postgres" },
+    database: oauth?.schema
+      ? { db: db.withoutPlugins().withPlugin(oauthJsonArrays(oauth.schema)), type: "postgres" }
+      : { dialect, type: "postgres" },
     basePath: "/api/auth",
     ...(mcpResource && { baseURL: config.siteOrigin }),
     // Keys are created through /api/v1/me/api-keys, which sets their scopes and enforces the cap.
@@ -71,7 +69,7 @@ export function createAuth(deps: {
       ...(config.auth.discord && { discord: config.auth.discord }),
     },
     plugins: [
-      ...openRiftMcpPlugins(mcpResource),
+      ...(oauth ? [jwt({ disableSettingJwtHeader: true, schema: jwtSchema }), oauth] : []),
       emailOTP({
         async sendVerificationOTP({ email, otp, type }, ctx) {
           const locale =
