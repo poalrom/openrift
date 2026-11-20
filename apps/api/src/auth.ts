@@ -1,4 +1,5 @@
 import { apiKey } from "@better-auth/api-key";
+import { mcp } from "@better-auth/mcp";
 import { sanitizeDisplayName, validateDisplayName } from "@openrift/shared/display-name";
 import { HOUR_MS } from "@openrift/shared/format-date";
 import { validateProfileBio } from "@openrift/shared/profile-bio";
@@ -6,6 +7,8 @@ import { validateRiotId } from "@openrift/shared/riot-id";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { emailOTP } from "better-auth/plugins/email-otp";
+import { jwt } from "better-auth/plugins/jwt";
+import type { BetterAuthPlugin } from "better-auth/types";
 import type { Dialect, Kysely } from "kysely";
 
 import type { createConfig } from "./config.js";
@@ -16,8 +19,29 @@ import type { createEmailSender } from "./email.js";
 import { emailMessages } from "./emails/messages.js";
 import { displayLocaleFromRequest } from "./lib/display-locale.js";
 import { collectionsRepo } from "./modules/collections/repositories/collections.js";
+import { MCP_SCOPE, mcpResourceUrl } from "./modules/mcp/config.js";
+import { jwtSchema, oauthSchema } from "./modules/mcp/oauth-schema.js";
 import { dropLiveSpotsOfUser } from "./modules/tournaments/services/participant-drops.js";
 import { userPreferencesRepo } from "./modules/users/repositories/user-preferences.js";
+
+function openRiftMcpPlugins(resource: string | undefined): BetterAuthPlugin[] {
+  if (!resource) {
+    return [];
+  }
+  return [
+    jwt({ disableSettingJwtHeader: true, schema: jwtSchema }),
+    mcp({
+      resource,
+      schema: oauthSchema,
+      loginPage: "/login",
+      consentPage: "/mcp/consent",
+      scopes: [MCP_SCOPE, "offline_access"],
+      grantTypes: ["authorization_code", "refresh_token"],
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+    }),
+  ];
+}
 
 export function createAuth(deps: {
   config: ReturnType<typeof createConfig>;
@@ -26,12 +50,14 @@ export function createAuth(deps: {
   sendEmail: ReturnType<typeof createEmailSender>;
 }) {
   const { config, db, dialect, sendEmail } = deps;
+  const mcpResource = mcpResourceUrl(config.siteOrigin);
 
   const auth = betterAuth({
     database: { dialect, type: "postgres" },
     basePath: "/api/auth",
+    ...(mcpResource && { baseURL: config.siteOrigin }),
     // Keys are created through /api/v1/me/api-keys, which sets their scopes and enforces the cap.
-    disabledPaths: ["/api-key/create", "/api-key/update"],
+    disabledPaths: ["/api-key/create", "/api-key/update", "/token"],
     // The app's own limiter in app.ts keys on x-real-ip; better-auth's would bucket every visitor together.
     rateLimit: { enabled: false },
     secret: config.auth.secret,
@@ -40,6 +66,7 @@ export function createAuth(deps: {
       ...(config.auth.discord && { discord: config.auth.discord }),
     },
     plugins: [
+      ...openRiftMcpPlugins(mcpResource),
       emailOTP({
         async sendVerificationOTP({ email, otp, type }, ctx) {
           const locale =

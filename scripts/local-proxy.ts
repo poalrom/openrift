@@ -42,7 +42,9 @@ const server = Bun.serve({
     if (url.pathname.startsWith("/media/")) {
       return serveMedia(url.pathname);
     }
-    const base = url.pathname.startsWith("/api/") ? API_TARGET : WEB_TARGET;
+    const isApi =
+      url.pathname.startsWith("/api/") || url.pathname.startsWith("/.well-known/oauth-");
+    const base = isApi ? API_TARGET : WEB_TARGET;
     return fetch(`${base}${url.pathname}${url.search}`, {
       method: req.method,
       headers: req.headers,

@@ -70,6 +70,17 @@ OpenRift uses [better-auth](https://www.better-auth.com/) for authentication. Th
 4. The client calls `authClient.emailOtp.resetPassword()`.
 5. On success, the user is redirected to `/login` with their email pre-filled.
 
+## OpenRift MCP
+
+Connect a remote MCP client that supports Streamable HTTP and OAuth dynamic client registration to
+`<BETTER_AUTH_URL>/api/mcp`. Sign in to OpenRift when prompted and review the requested access.
+For local development, use the same localhost origin and scheme as the web app.
+
+The `openrift:read` scope exposes card search and read access to your collections, copies and decks.
+The API uses the same access checks as the web app. Clients may request `offline_access` to refresh
+their access. Migration `385-mcp-oauth` creates the signing-key and OAuth storage. MCP requires
+HTTPS, with HTTP allowed on loopback for local development.
+
 ## Session Management
 
 - Sessions are stored in the `sessions` table and represented as HTTP cookies.
