@@ -29,14 +29,14 @@ const toolReply = z.object({
 });
 
 describe.skipIf(!databaseUrl)("OpenRift MCP OAuth", () => {
-  const { db, dialect } = createDb(databaseUrl ?? "");
+  const { db } = createDb(databaseUrl ?? "");
   const config = createConfig({
     BETTER_AUTH_URL: origin,
     BETTER_AUTH_SECRET: "openrift-mcp-integration-secret-32-chars",
     CORS_ORIGIN: origin,
     DISABLE_AUTH_RATE_LIMIT: "1",
   });
-  const auth = createAuth({ db, dialect, config, sendEmail: () => Promise.resolve(undefined) });
+  const auth = createAuth({ db, config, sendEmail: () => Promise.resolve(undefined) });
   const app = createApp({ db, auth, config, log: createLogger("test", "silent") });
   const password = randomUUID();
   const otherEmail = `mcp-other-${randomUUID()}@test.example`;
@@ -145,6 +145,13 @@ describe.skipIf(!databaseUrl)("OpenRift MCP OAuth", () => {
     const { client_id: clientId } = z
       .object({ client_id: z.string() })
       .parse(await registration.json());
+    const { adapter } = await auth.$context;
+    const client = await adapter.update({
+      model: "oauthClient",
+      where: [{ field: "clientId", value: clientId }],
+      update: { requirePKCE: true },
+    });
+    expect(client).toMatchObject({ requirePKCE: true });
     const verifier = randomBytes(32).toString("base64url");
     const authorizeQuery = new URLSearchParams({
       client_id: clientId,

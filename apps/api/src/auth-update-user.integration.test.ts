@@ -10,7 +10,7 @@ const url = process.env.INTEGRATION_DB_URL;
 const conn = url ? createDb(url) : null;
 
 describe.skipIf(!conn)("updateUser profile fields (integration)", () => {
-  const { db, dialect } = conn!;
+  const { db } = conn!;
   const config = {
     isDev: true,
     corsOrigin: undefined,
@@ -20,7 +20,6 @@ describe.skipIf(!conn)("updateUser profile fields (integration)", () => {
   const auth = createAuth({
     config,
     db,
-    dialect,
     sendEmail: createEmailSender(config.smtp, true),
   });
   let headers: Headers;
@@ -60,6 +59,8 @@ describe.skipIf(!conn)("updateUser profile fields (integration)", () => {
       .where("id", "=", USER_ID)
       .executeTakeFirstOrThrow();
     expect(row.profileShowRiotId).toBe(true);
+    const session = await auth.api.getSession({ headers });
+    expect(session?.user.profileShowRiotId).toBe(true);
   });
 
   it("rejects a bio over the cap with its own error code", async () => {

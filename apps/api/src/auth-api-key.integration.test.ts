@@ -12,7 +12,7 @@ const url = process.env.INTEGRATION_DB_URL;
 const conn = url ? createDb(url) : null;
 
 describe.skipIf(!conn)("API key auth (integration)", () => {
-  const { db, dialect } = conn!;
+  const { db } = conn!;
   const config = {
     isDev: true,
     corsOrigin: undefined,
@@ -22,7 +22,6 @@ describe.skipIf(!conn)("API key auth (integration)", () => {
   const auth = createAuth({
     config,
     db,
-    dialect,
     sendEmail: createEmailSender(config.smtp, true),
   });
 
