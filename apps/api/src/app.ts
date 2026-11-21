@@ -40,6 +40,8 @@ import { deckImageRoute } from "./modules/decks/routes/authenticated-deck-image.
 import { mountFriendGroupBannerMiddleware } from "./modules/groups/routes/authenticated-friend-groups-banner.js";
 import { publicFriendGroupCalendarFeedsRoute } from "./modules/groups/routes/public-friend-group-calendar-feeds.js";
 import { listImageRoute } from "./modules/lists/routes/authenticated-list-image.js";
+import { MCP_PATH } from "./modules/mcp/config.js";
+import { mountMcp } from "./modules/mcp/routes.js";
 import { mountMetaSubmissionsMiddleware } from "./modules/meta/routes/authenticated-meta-submissions.js";
 import { mountScanReportsMiddleware } from "./modules/scan/routes/authenticated-scan-reports.js";
 import { mountBoardStatesRateLimit } from "./modules/stage/routes/authenticated-board-states-rate-limit.js";
@@ -106,6 +108,7 @@ const rateLimitedAuthPrefixes = [
   "/api/auth/forget-password",
   "/api/auth/request-password-reset",
   "/api/auth/reset-password",
+  "/api/auth/oauth2/register",
   "/api/auth/send-verification-email",
   "/api/auth/change-email",
   "/api/auth/change-password",
@@ -268,7 +271,7 @@ export function createApp(deps: AppDeps) {
       const path = c.req.path;
       const hasBody = method !== "GET" && method !== "HEAD" && method !== "OPTIONS";
       // Skip auth endpoints to avoid logging credentials (passwords, OTPs, tokens).
-      if (hasBody && !path.startsWith("/api/auth/")) {
+      if (hasBody && path !== MCP_PATH && !path.startsWith("/api/auth/")) {
         const contentType = c.req.header("content-type") ?? "";
         if (isTextualContentType(contentType)) {
           try {
@@ -291,7 +294,7 @@ export function createApp(deps: AppDeps) {
       const method = c.req.method;
       const path = c.req.path;
       // Skip auth endpoints to avoid logging session tokens/cookies in responses.
-      if (path.startsWith("/api/auth/")) {
+      if (path === MCP_PATH || path.startsWith("/api/auth/")) {
         return;
       }
       const contentType = c.res.headers.get("content-type") ?? "";
@@ -343,6 +346,7 @@ export function createApp(deps: AppDeps) {
   // /copies/move alongside /copies/:id).
   app.get("/api/auth/*", (c) => auth.handler(c.req.raw));
   app.post("/api/auth/*", (c) => auth.handler(c.req.raw));
+  mountMcp(app, auth, config);
 
   app.get("/api/doc", async (c) => c.json(await buildPublicDoc()));
   // Admin doc + UI are intentionally public (no requireAdmin in front): every operation

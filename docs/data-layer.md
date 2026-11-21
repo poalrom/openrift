@@ -74,7 +74,7 @@ On a marketplace that prices finishes separately, a listing that sells in both f
 
 ## Auth Tables
 
-`users`, `sessions`, `accounts`, `verifications` and `api_keys` are managed by [better-auth](https://www.better-auth.com/). `apps/api/src/auth.ts` maps its field names to `snake_case` columns. The library owns the names of its own columns, so `users.email_verified`, `api_keys.enabled` and `api_keys.rate_limit_enabled` do not follow the boolean prefix rule. Columns OpenRift adds to `users` do, and are declared there as `additionalFields` with an explicit `fieldName`.
+`users`, `sessions`, `accounts`, `verifications` and `api_keys` are managed by [better-auth](https://www.better-auth.com/). The Better Auth connection uses `CamelCasePlugin` for table and column casing and preserves keys inside JSON values. `apps/api/src/auth.ts` declares plural table names and aliases for fields whose JavaScript names differ from the database names beyond casing, such as `profileShowRiotId` and `is_profile_riot_id_shown`. The library owns the names of its own columns, so `users.email_verified`, `api_keys.enabled` and `api_keys.rate_limit_enabled` do not follow the boolean prefix rule.
 
 ## Catalog Refresh
 

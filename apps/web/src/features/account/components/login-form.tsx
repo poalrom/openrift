@@ -148,6 +148,9 @@ function PasswordSignIn({
       setServerError(form, error);
       return;
     }
+    if ("redirect" in result.data && result.data.redirect === true) {
+      return;
+    }
     await enterAsSignedIn(queryClient, result.data.user.id);
     void navigate({ to: (redirectTo as "/collections") ?? SIGNED_IN_HOME });
   }
@@ -292,6 +295,9 @@ function OtpSignIn({
     }
     if (result.error) {
       setOtpError(otpErrorMessage(result.error));
+      return;
+    }
+    if ("redirect" in result.data && result.data.redirect === true) {
       return;
     }
     if (isNewAccount(result.data.user.createdAt)) {

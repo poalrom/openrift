@@ -19,6 +19,7 @@ import { GroupNotificationsSection } from "@/features/account/components/group-n
 import { LanguagesSection } from "@/features/account/components/languages-section";
 import { MarketplacesSection } from "@/features/account/components/marketplaces-section";
 import { MetaCreditSection } from "@/features/account/components/meta-credit-section";
+import { OAuthConnectionsSection } from "@/features/account/components/oauth-connections-section";
 import { PasswordSection } from "@/features/account/components/password-section";
 import { PublicProfileSection } from "@/features/account/components/public-profile-section";
 import { PublicSharingSection } from "@/features/account/components/public-sharing-section";
@@ -127,6 +128,7 @@ export function ProfilePage() {
           </SettingsGroup>
 
           <SettingsGroup id="integrations" title={m.profile_nav_integrations()}>
+            <OAuthConnectionsSection />
             <ApiKeysSection />
           </SettingsGroup>
 

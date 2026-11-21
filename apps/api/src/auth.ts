@@ -1,4 +1,10 @@
 import { apiKey } from "@better-auth/api-key";
+import { mcp } from "@better-auth/mcp";
+import {
+  MCP_READ_SCOPE,
+  MCP_WRITE_SCOPE,
+  OAUTH_OFFLINE_SCOPE,
+} from "@openrift/shared/contracts/oauth-connections";
 import { sanitizeDisplayName, validateDisplayName } from "@openrift/shared/display-name";
 import { HOUR_MS } from "@openrift/shared/format-date";
 import { validateProfileBio } from "@openrift/shared/profile-bio";
@@ -6,7 +12,10 @@ import { validateRiotId } from "@openrift/shared/riot-id";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { emailOTP } from "better-auth/plugins/email-otp";
-import type { Dialect, Kysely } from "kysely";
+import { jwt } from "better-auth/plugins/jwt";
+import type { BetterAuthPlugin } from "better-auth/types";
+import { CamelCasePlugin } from "kysely";
+import type { Kysely } from "kysely";
 
 import type { createConfig } from "./config.js";
 import { isLocalDevOrigin, matchOrigin } from "./cors.js";
@@ -16,22 +25,57 @@ import type { createEmailSender } from "./email.js";
 import { emailMessages } from "./emails/messages.js";
 import { displayLocaleFromRequest } from "./lib/display-locale.js";
 import { collectionsRepo } from "./modules/collections/repositories/collections.js";
+import { mcpResourceUrl } from "./modules/mcp/config.js";
+import { oauthJsonArrays } from "./modules/mcp/oauth-json-arrays.js";
 import { dropLiveSpotsOfUser } from "./modules/tournaments/services/participant-drops.js";
 import { userPreferencesRepo } from "./modules/users/repositories/user-preferences.js";
+
+function openRiftMcpPlugin(resource: string): BetterAuthPlugin {
+  return mcp({
+    resource,
+    schema: {
+      oauthClient: {
+        modelName: "oauthClients",
+        // Kysely reads require_pkce back as requirePkce.
+        fields: { requirePKCE: "requirePkce" },
+      },
+      oauthResource: { modelName: "oauthResources" },
+      oauthClientResource: { modelName: "oauthClientResources" },
+      oauthRefreshToken: { modelName: "oauthRefreshTokens" },
+      oauthAccessToken: { modelName: "oauthAccessTokens" },
+      oauthConsent: { modelName: "oauthConsents" },
+      oauthClientAssertion: { modelName: "oauthClientAssertions" },
+    },
+    loginPage: "/login",
+    consentPage: "/mcp/consent",
+    scopes: [MCP_READ_SCOPE, MCP_WRITE_SCOPE, OAUTH_OFFLINE_SCOPE],
+    grantTypes: ["authorization_code", "refresh_token"],
+    allowDynamicClientRegistration: true,
+    allowUnauthenticatedClientRegistration: true,
+  });
+}
 
 export function createAuth(deps: {
   config: ReturnType<typeof createConfig>;
   db: Kysely<Database>;
-  dialect: Dialect;
   sendEmail: ReturnType<typeof createEmailSender>;
 }) {
-  const { config, db, dialect, sendEmail } = deps;
+  const { config, db, sendEmail } = deps;
+  const mcpResource = mcpResourceUrl(config.siteOrigin);
+  const oauth = mcpResource ? openRiftMcpPlugin(mcpResource) : undefined;
+  const rawDb = db.withoutPlugins();
+  // Array normalization uses Better Auth's identifiers before CamelCasePlugin renames them.
+  const authDb = oauth?.schema ? rawDb.withPlugin(oauthJsonArrays(oauth.schema)) : rawDb;
 
   const auth = betterAuth({
-    database: { dialect, type: "postgres" },
+    database: {
+      db: authDb.withPlugin(new CamelCasePlugin({ maintainNestedObjectKeys: true })),
+      type: "postgres",
+    },
     basePath: "/api/auth",
+    ...(mcpResource && { baseURL: config.siteOrigin }),
     // Keys are created through /api/v1/me/api-keys, which sets their scopes and enforces the cap.
-    disabledPaths: ["/api-key/create", "/api-key/update"],
+    disabledPaths: ["/api-key/create", "/api-key/update", "/token"],
     // The app's own limiter in app.ts keys on x-real-ip; better-auth's would bucket every visitor together.
     rateLimit: { enabled: false },
     secret: config.auth.secret,
@@ -40,6 +84,7 @@ export function createAuth(deps: {
       ...(config.auth.discord && { discord: config.auth.discord }),
     },
     plugins: [
+      ...(oauth ? [jwt({ disableSettingJwtHeader: true }), oauth] : []),
       emailOTP({
         async sendVerificationOTP({ email, otp, type }, ctx) {
           const locale =
@@ -83,22 +128,7 @@ export function createAuth(deps: {
         },
         schema: {
           apikey: {
-            modelName: "api_keys",
-            fields: {
-              configId: "config_id",
-              referenceId: "reference_id",
-              refillInterval: "refill_interval",
-              refillAmount: "refill_amount",
-              lastRefillAt: "last_refill_at",
-              rateLimitEnabled: "rate_limit_enabled",
-              rateLimitTimeWindow: "rate_limit_time_window",
-              rateLimitMax: "rate_limit_max",
-              requestCount: "request_count",
-              lastRequest: "last_request",
-              expiresAt: "expires_at",
-              createdAt: "created_at",
-              updatedAt: "updated_at",
-            },
+            modelName: "apiKeys",
           },
         },
       }),
@@ -134,7 +164,6 @@ export function createAuth(deps: {
           type: "string",
           required: false,
           input: true,
-          fieldName: "riot_id",
         },
         bio: {
           type: "string",
@@ -145,31 +174,26 @@ export function createAuth(deps: {
           type: "boolean",
           required: false,
           input: true,
-          fieldName: "is_profile_riot_id_shown",
+          fieldName: "isProfileRiotIdShown",
         },
         profileShowCollection: {
           type: "boolean",
           required: false,
           input: true,
-          fieldName: "is_profile_collection_shown",
+          fieldName: "isProfileCollectionShown",
         },
         profileShowLastActive: {
           type: "boolean",
           required: false,
           input: true,
-          fieldName: "is_profile_last_active_shown",
+          fieldName: "isProfileLastActiveShown",
         },
         profileShowReferralTier: {
           type: "boolean",
           required: false,
           input: true,
-          fieldName: "is_profile_referral_tier_shown",
+          fieldName: "isProfileReferralTierShown",
         },
-      },
-      fields: {
-        emailVerified: "email_verified",
-        createdAt: "created_at",
-        updatedAt: "updated_at",
       },
       modelName: "users",
     },
@@ -180,14 +204,6 @@ export function createAuth(deps: {
         enabled: true,
         maxAge: 5 * 60,
       },
-      fields: {
-        userId: "user_id",
-        expiresAt: "expires_at",
-        ipAddress: "ip_address",
-        userAgent: "user_agent",
-        createdAt: "created_at",
-        updatedAt: "updated_at",
-      },
       modelName: "sessions",
     },
     account: {
@@ -196,26 +212,9 @@ export function createAuth(deps: {
         // email (e.g. a work Gmail) does not create an account-takeover vector.
         allowDifferentEmails: true,
       },
-      fields: {
-        userId: "user_id",
-        accountId: "account_id",
-        providerId: "provider_id",
-        accessToken: "access_token",
-        refreshToken: "refresh_token",
-        accessTokenExpiresAt: "access_token_expires_at",
-        refreshTokenExpiresAt: "refresh_token_expires_at",
-        idToken: "id_token",
-        createdAt: "created_at",
-        updatedAt: "updated_at",
-      },
       modelName: "accounts",
     },
     verification: {
-      fields: {
-        expiresAt: "expires_at",
-        createdAt: "created_at",
-        updatedAt: "updated_at",
-      },
       modelName: "verifications",
     },
     databaseHooks: {

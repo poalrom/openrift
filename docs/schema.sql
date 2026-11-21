@@ -2565,6 +2565,21 @@ CREATE TABLE public.job_schedules (
 
 
 --
+-- Name: jwks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.jwks (
+    id text NOT NULL,
+    public_key text NOT NULL,
+    private_key text NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    expires_at timestamp with time zone,
+    alg text,
+    crv text
+);
+
+
+--
 -- Name: keyword_translations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3544,6 +3559,185 @@ CREATE MATERIALIZED VIEW public.mv_printing_sides_canonical_rank AS
      JOIN public.card_sizes cs ON ((cs.slug = s.size)))
      JOIN public.languages l ON ((l.code = f.language)))
   WITH NO DATA;
+
+
+--
+-- Name: oauth_access_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_access_tokens (
+    id text NOT NULL,
+    token text NOT NULL,
+    client_id text NOT NULL,
+    session_id text,
+    user_id text,
+    reference_id text,
+    authorization_code_id text,
+    resources jsonb,
+    requested_user_info_claims jsonb,
+    refresh_id text,
+    expires_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    revoked timestamp with time zone,
+    confirmation jsonb,
+    scopes jsonb NOT NULL,
+    CONSTRAINT oauth_access_tokens_confirmation_check CHECK ((jsonb_typeof(confirmation) = 'object'::text)),
+    CONSTRAINT oauth_access_tokens_requested_user_info_claims_check CHECK ((jsonb_typeof(requested_user_info_claims) = 'array'::text)),
+    CONSTRAINT oauth_access_tokens_resources_check CHECK ((jsonb_typeof(resources) = 'array'::text)),
+    CONSTRAINT oauth_access_tokens_scopes_check CHECK ((jsonb_typeof(scopes) = 'array'::text))
+);
+
+
+--
+-- Name: oauth_client_assertions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_client_assertions (
+    id text NOT NULL,
+    expires_at timestamp with time zone NOT NULL
+);
+
+
+--
+-- Name: oauth_client_resources; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_client_resources (
+    id text NOT NULL,
+    client_id text NOT NULL,
+    resource_id text NOT NULL,
+    metadata jsonb,
+    created_at timestamp with time zone,
+    CONSTRAINT oauth_client_resources_metadata_check CHECK ((jsonb_typeof(metadata) = 'object'::text))
+);
+
+
+--
+-- Name: oauth_clients; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_clients (
+    id text NOT NULL,
+    client_id text NOT NULL,
+    client_secret text,
+    client_discovery_id text,
+    disabled boolean,
+    skip_consent boolean,
+    enable_end_session boolean,
+    subject_type text,
+    scopes jsonb,
+    client_credentials_scopes jsonb,
+    user_id text,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    name text,
+    uri text,
+    icon text,
+    contacts jsonb,
+    tos text,
+    policy text,
+    software_id text,
+    software_version text,
+    software_statement text,
+    redirect_uris jsonb NOT NULL,
+    post_logout_redirect_uris jsonb,
+    backchannel_logout_uri text,
+    backchannel_logout_session_required boolean,
+    token_endpoint_auth_method text,
+    application_type text,
+    jwks text,
+    jwks_uri text,
+    grant_types jsonb,
+    response_types jsonb,
+    require_pkce boolean,
+    dpop_bound_access_tokens boolean,
+    reference_id text,
+    metadata jsonb,
+    CONSTRAINT oauth_clients_client_credentials_scopes_check CHECK ((jsonb_typeof(client_credentials_scopes) = 'array'::text)),
+    CONSTRAINT oauth_clients_contacts_check CHECK ((jsonb_typeof(contacts) = 'array'::text)),
+    CONSTRAINT oauth_clients_grant_types_check CHECK ((jsonb_typeof(grant_types) = 'array'::text)),
+    CONSTRAINT oauth_clients_metadata_check CHECK ((jsonb_typeof(metadata) = 'object'::text)),
+    CONSTRAINT oauth_clients_post_logout_redirect_uris_check CHECK ((jsonb_typeof(post_logout_redirect_uris) = 'array'::text)),
+    CONSTRAINT oauth_clients_redirect_uris_check CHECK ((jsonb_typeof(redirect_uris) = 'array'::text)),
+    CONSTRAINT oauth_clients_response_types_check CHECK ((jsonb_typeof(response_types) = 'array'::text)),
+    CONSTRAINT oauth_clients_scopes_check CHECK ((jsonb_typeof(scopes) = 'array'::text))
+);
+
+
+--
+-- Name: oauth_consents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_consents (
+    id text NOT NULL,
+    client_id text NOT NULL,
+    user_id text,
+    reference_id text,
+    resources jsonb,
+    requested_user_info_claims jsonb,
+    scopes jsonb NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    updated_at timestamp with time zone NOT NULL,
+    CONSTRAINT oauth_consents_requested_user_info_claims_check CHECK ((jsonb_typeof(requested_user_info_claims) = 'array'::text)),
+    CONSTRAINT oauth_consents_resources_check CHECK ((jsonb_typeof(resources) = 'array'::text)),
+    CONSTRAINT oauth_consents_scopes_check CHECK ((jsonb_typeof(scopes) = 'array'::text))
+);
+
+
+--
+-- Name: oauth_refresh_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_refresh_tokens (
+    id text NOT NULL,
+    token text NOT NULL,
+    client_id text NOT NULL,
+    session_id text,
+    user_id text NOT NULL,
+    reference_id text,
+    authorization_code_id text,
+    resources jsonb,
+    requested_user_info_claims jsonb,
+    expires_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    revoked timestamp with time zone,
+    rotated_at timestamp with time zone,
+    rotation_replay_response text,
+    rotation_replay_expires_at timestamp with time zone,
+    auth_time timestamp with time zone,
+    confirmation jsonb,
+    scopes jsonb NOT NULL,
+    CONSTRAINT oauth_refresh_tokens_confirmation_check CHECK ((jsonb_typeof(confirmation) = 'object'::text)),
+    CONSTRAINT oauth_refresh_tokens_requested_user_info_claims_check CHECK ((jsonb_typeof(requested_user_info_claims) = 'array'::text)),
+    CONSTRAINT oauth_refresh_tokens_resources_check CHECK ((jsonb_typeof(resources) = 'array'::text)),
+    CONSTRAINT oauth_refresh_tokens_scopes_check CHECK ((jsonb_typeof(scopes) = 'array'::text))
+);
+
+
+--
+-- Name: oauth_resources; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_resources (
+    id text NOT NULL,
+    identifier text NOT NULL,
+    name text NOT NULL,
+    access_token_ttl integer,
+    refresh_token_ttl integer,
+    signing_algorithm text,
+    signing_key_id text,
+    allowed_scopes jsonb,
+    custom_claims jsonb,
+    dpop_bound_access_tokens_required boolean,
+    disabled boolean,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    policy_version integer,
+    metadata jsonb,
+    CONSTRAINT oauth_resources_allowed_scopes_check CHECK ((jsonb_typeof(allowed_scopes) = 'array'::text)),
+    CONSTRAINT oauth_resources_custom_claims_check CHECK ((jsonb_typeof(custom_claims) = 'object'::text)),
+    CONSTRAINT oauth_resources_metadata_check CHECK ((jsonb_typeof(metadata) = 'object'::text))
+);
 
 
 --
@@ -4898,6 +5092,14 @@ CREATE TABLE public.verifications (
 
 
 --
+-- Name: jwks jwks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.jwks
+    ADD CONSTRAINT jwks_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: kysely_migration_lock kysely_migration_lock_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4911,6 +5113,102 @@ ALTER TABLE ONLY public.kysely_migration_lock
 
 ALTER TABLE ONLY public.kysely_migration
     ADD CONSTRAINT kysely_migration_pkey PRIMARY KEY (name);
+
+
+--
+-- Name: oauth_access_tokens oauth_access_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_access_tokens
+    ADD CONSTRAINT oauth_access_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_access_tokens oauth_access_tokens_token_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_access_tokens
+    ADD CONSTRAINT oauth_access_tokens_token_key UNIQUE (token);
+
+
+--
+-- Name: oauth_client_assertions oauth_client_assertions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_client_assertions
+    ADD CONSTRAINT oauth_client_assertions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_client_resources oauth_client_resources_client_id_resource_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_client_resources
+    ADD CONSTRAINT oauth_client_resources_client_id_resource_id_key UNIQUE (client_id, resource_id);
+
+
+--
+-- Name: oauth_client_resources oauth_client_resources_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_client_resources
+    ADD CONSTRAINT oauth_client_resources_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_clients oauth_clients_client_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_clients
+    ADD CONSTRAINT oauth_clients_client_id_key UNIQUE (client_id);
+
+
+--
+-- Name: oauth_clients oauth_clients_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_clients
+    ADD CONSTRAINT oauth_clients_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_consents oauth_consents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_consents
+    ADD CONSTRAINT oauth_consents_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_refresh_tokens oauth_refresh_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_refresh_tokens
+    ADD CONSTRAINT oauth_refresh_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: oauth_refresh_tokens oauth_refresh_tokens_token_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_refresh_tokens
+    ADD CONSTRAINT oauth_refresh_tokens_token_key UNIQUE (token);
+
+
+--
+-- Name: oauth_resources oauth_resources_identifier_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_resources
+    ADD CONSTRAINT oauth_resources_identifier_key UNIQUE (identifier);
+
+
+--
+-- Name: oauth_resources oauth_resources_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_resources
+    ADD CONSTRAINT oauth_resources_pkey PRIMARY KEY (id);
 
 
 --
@@ -7588,6 +7886,97 @@ CREATE INDEX idx_meta_submissions_user_status ON public.meta_submissions USING b
 --
 
 CREATE INDEX idx_mv_daily_printing_prices_latest ON public.mv_daily_printing_prices USING btree (marketplace, printing_id, day DESC);
+
+
+--
+-- Name: idx_oauth_access_token_authorization_code_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_access_token_authorization_code_id ON public.oauth_access_tokens USING btree (authorization_code_id);
+
+
+--
+-- Name: idx_oauth_access_token_client_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_access_token_client_id ON public.oauth_access_tokens USING btree (client_id);
+
+
+--
+-- Name: idx_oauth_access_token_refresh_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_access_token_refresh_id ON public.oauth_access_tokens USING btree (refresh_id);
+
+
+--
+-- Name: idx_oauth_access_token_session_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_access_token_session_id ON public.oauth_access_tokens USING btree (session_id);
+
+
+--
+-- Name: idx_oauth_access_token_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_access_token_user_id ON public.oauth_access_tokens USING btree (user_id);
+
+
+--
+-- Name: idx_oauth_client_resource_resource_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_client_resource_resource_id ON public.oauth_client_resources USING btree (resource_id);
+
+
+--
+-- Name: idx_oauth_client_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_client_user_id ON public.oauth_clients USING btree (user_id);
+
+
+--
+-- Name: idx_oauth_consent_client_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_consent_client_id ON public.oauth_consents USING btree (client_id);
+
+
+--
+-- Name: idx_oauth_consent_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_consent_user_id ON public.oauth_consents USING btree (user_id);
+
+
+--
+-- Name: idx_oauth_refresh_token_authorization_code_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_refresh_token_authorization_code_id ON public.oauth_refresh_tokens USING btree (authorization_code_id);
+
+
+--
+-- Name: idx_oauth_refresh_token_client_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_refresh_token_client_id ON public.oauth_refresh_tokens USING btree (client_id);
+
+
+--
+-- Name: idx_oauth_refresh_token_session_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_refresh_token_session_id ON public.oauth_refresh_tokens USING btree (session_id);
+
+
+--
+-- Name: idx_oauth_refresh_token_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_oauth_refresh_token_user_id ON public.oauth_refresh_tokens USING btree (user_id);
 
 
 --
@@ -11489,6 +11878,102 @@ ALTER TABLE ONLY public.uvsgames_events
 
 ALTER TABLE ONLY public.uvsgames_format_mappings
     ADD CONSTRAINT fk_uvsgames_format_mappings_mapped_format FOREIGN KEY (mapped_format) REFERENCES public.deck_formats(slug);
+
+
+--
+-- Name: oauth_access_tokens oauth_access_tokens_client_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_access_tokens
+    ADD CONSTRAINT oauth_access_tokens_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.oauth_clients(client_id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_access_tokens oauth_access_tokens_refresh_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_access_tokens
+    ADD CONSTRAINT oauth_access_tokens_refresh_id_fkey FOREIGN KEY (refresh_id) REFERENCES public.oauth_refresh_tokens(id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_access_tokens oauth_access_tokens_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_access_tokens
+    ADD CONSTRAINT oauth_access_tokens_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.sessions(id) ON DELETE SET NULL;
+
+
+--
+-- Name: oauth_access_tokens oauth_access_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_access_tokens
+    ADD CONSTRAINT oauth_access_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_client_resources oauth_client_resources_client_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_client_resources
+    ADD CONSTRAINT oauth_client_resources_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.oauth_clients(client_id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_client_resources oauth_client_resources_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_client_resources
+    ADD CONSTRAINT oauth_client_resources_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.oauth_resources(identifier) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_clients oauth_clients_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_clients
+    ADD CONSTRAINT oauth_clients_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_consents oauth_consents_client_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_consents
+    ADD CONSTRAINT oauth_consents_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.oauth_clients(client_id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_consents oauth_consents_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_consents
+    ADD CONSTRAINT oauth_consents_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_refresh_tokens oauth_refresh_tokens_client_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_refresh_tokens
+    ADD CONSTRAINT oauth_refresh_tokens_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.oauth_clients(client_id) ON DELETE CASCADE;
+
+
+--
+-- Name: oauth_refresh_tokens oauth_refresh_tokens_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_refresh_tokens
+    ADD CONSTRAINT oauth_refresh_tokens_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.sessions(id) ON DELETE SET NULL;
+
+
+--
+-- Name: oauth_refresh_tokens oauth_refresh_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_refresh_tokens
+    ADD CONSTRAINT oauth_refresh_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --

@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
+
+import { createDb } from "./db/connect.js";
 
 const dropLiveSpotsOfUser = vi.fn(() => Promise.resolve());
 
@@ -7,6 +9,8 @@ vi.mock("./deps.js", () => ({ createRepos: () => ({}), createTransact: () => vi.
 vi.mock("./modules/tournaments/services/participant-drops.js", () => ({ dropLiveSpotsOfUser }));
 
 const { createAuth } = await import("./auth.js");
+const { db } = createDb("postgres://localhost/test");
+afterAll(() => db.destroy());
 
 interface DeleteUserOptions {
   user: { deleteUser: { beforeDelete: (user: { id: string }) => Promise<void> } };
@@ -21,8 +25,7 @@ describe("createAuth account deletion", () => {
         auth: { secret: "test-secret" },
         smtp: { configured: false },
       },
-      db: {},
-      dialect: {},
+      db,
       sendEmail: vi.fn(),
     } as never) as unknown as DeleteUserOptions;
 
@@ -45,8 +48,7 @@ describe("createAuth rate limiting", () => {
         auth: { secret: "test-secret" },
         smtp: { configured: false },
       },
-      db: {},
-      dialect: {},
+      db,
       sendEmail: vi.fn(),
     } as never) as unknown as { rateLimit?: { enabled?: boolean } };
 

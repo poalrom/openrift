@@ -1,4 +1,5 @@
 import { apiKeyClient } from "@better-auth/api-key/client";
+import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 import { emailOTPClient, inferAdditionalFields } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
@@ -13,6 +14,7 @@ export const authClient = createAuthClient({
   plugins: [
     emailOTPClient(),
     apiKeyClient(),
+    oauthProviderClient(),
     // Mirrors user.additionalFields in apps/api/src/auth.ts; keep in sync.
     inferAdditionalFields({
       user: {

@@ -16,7 +16,9 @@
   "dependencies": {
     "@better-auth/api-key": "1.7.23",
     "@better-auth/core": "1.7.23",
+    "@better-auth/mcp": "1.7.23",
     "@hono/swagger-ui": "0.6.2",
+    "@modelcontextprotocol/server": "2.4.0",
     "@openrift/shared": "workspace:*",
     "@opentelemetry/api": "1.10.0",
     "@opentelemetry/semantic-conventions": "1.45.0",

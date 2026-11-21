@@ -57,3 +57,14 @@ describe.each([
     await expect(gate({ context: { queryClient }, search: validate({}) })).resolves.toBeUndefined();
   });
 });
+
+it("keeps a signed OAuth authorization attempt on the login page", async () => {
+  const validate = LoginRoute.options.validateSearch as Validate;
+  const search = validate({
+    client_id: "mcp-client",
+    sig: "provider-signature",
+  });
+  const gate = LoginRoute.options.beforeLoad as unknown as Hook;
+  const queryClient = clientWith({ user: { id: "user-1" } });
+  await expect(gate({ context: { queryClient }, search })).resolves.toBeUndefined();
+});

@@ -63,7 +63,7 @@ if (config.sentryDsn) {
   });
 }
 
-const { db, dialect } = createDb(config.databaseUrl, REQUEST_POOL);
+const { db } = createDb(config.databaseUrl, REQUEST_POOL);
 const { db: backgroundDb } = createDb(config.databaseUrl, BACKGROUND_POOL);
 const sendEmail = createEmailSender(config.smtp, config.isDev);
 
@@ -74,7 +74,7 @@ await migrate(backgroundDb, log.child({ service: "migrate" }));
 
 // better-auth validates its schema on creation and caches a mismatch for the
 // process lifetime, so the instance must not exist before migrations ran.
-const auth = createAuth({ config, db, dialect, sendEmail });
+const auth = createAuth({ config, db, sendEmail });
 
 log.info("Validating well-known slugs");
 await validateWellKnownSlugs(wellKnownRepo(backgroundDb));

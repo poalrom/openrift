@@ -126,6 +126,7 @@ import { adminGrantsRouter } from "../modules/users/routes/admin-grants.js";
 import { adminUsersRouter } from "../modules/users/routes/admin-users.js";
 import { apiKeysRouter } from "../modules/users/routes/authenticated-api-keys.js";
 import { contactMethodsRouter } from "../modules/users/routes/authenticated-contact-methods.js";
+import { oauthConnectionsRouter } from "../modules/users/routes/authenticated-oauth-connections.js";
 import { ownFeatureFlagsRouter } from "../modules/users/routes/authenticated-own-feature-flags.js";
 import { preferencesRouter } from "../modules/users/routes/authenticated-preferences.js";
 import { referralsRouter } from "../modules/users/routes/authenticated-referrals.js";
@@ -196,6 +197,7 @@ const apiRouter = {
   adminUnifiedMappingsRouter,
   adminUsersRouter,
   apiKeysRouter,
+  oauthConnectionsRouter,
   badgesRouter,
   cardSubmissionsRouter,
   scanReportsRouter,
